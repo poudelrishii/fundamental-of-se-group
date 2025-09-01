@@ -1,17 +1,34 @@
-from tkinter import *
-from tkinter import ttk
+from tkinter import Tk
+from views.login_page import LoginPage
+from views.splash_page import SplashScreenPage
 
-from strings import en as STRINGS
-
-class Main:
+class MainPage:
     def __init__(self):
-        self.root = Tk() 
+        self.root = Tk()
+        self.root.title("Aplikasi")
+        self.root.geometry("400x300")
+        self.current_page = None
 
-    def main_view(self):
-        frm = ttk.Frame(self.root, padding=100)
-        frm.grid()
-        ttk.Label(frm, text= STRINGS.APP_TITLE).grid(column=0, row=0)
+        self.show_splash()
+
+    def show_splash(self):
+        self.current_page = SplashScreenPage(self.root, self.show_login_page)
+
+    def show_login_page(self):
+        self.current_page.pack_forget()
+        self.current_page = LoginPage(self.root, self)
+        self.current_page.render()
+
+    # def show_home_page(self):
+    #     self.current_page.pack_forget()
+    #     self.current_page = HomePage(self.root, self)
+
+    # def show_other_page(self):
+    #     self.current_page.pack_forget()
+    #     self.current_page = OtherPage(self.root, self)
+
+    def run(self):
         self.root.mainloop()
 
-main = Main()
-main.main_view()
+main = MainPage()
+main.run()
