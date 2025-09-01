@@ -1,19 +1,23 @@
-from tkinter import Tk
-from tkinter import ttk
+from tkinter import *
 
-from strings import en as STRINGS
+class BasePage(Frame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.master = master
+        self.pack(fill=BOTH, expand=True)
+        self.title_label = None
 
-class BasePage:
-    def __init__(self):
-        self.root = Tk()
-        self.root.title(STRINGS.APP_TITLE)
-        self.frame = ttk.Frame(self.root, padding=20)
-        self.frame.grid()
+    def clear_page(self):
+        for widget in self.winfo_children():
+            if widget != self.title_label:
+                widget.destroy()
 
-        self.render() 
+    def set_background_color(self, color="#f0f0f0"):
+        self.configure(bg=color)
 
-    def render(self):
-        pass
-
-    def run(self):
-        self.root.mainloop()
+    def set_title(self, text, font=("Arial", 16), pady=20):
+        if self.title_label:
+            self.title_label.config(text=text)
+        else:
+            self.title_label = Label(self, text=text, font=font, bg=self["bg"])
+            self.title_label.pack(pady=pady)
