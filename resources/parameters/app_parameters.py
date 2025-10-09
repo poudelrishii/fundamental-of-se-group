@@ -174,3 +174,12 @@ REGISTER_CONFIG = {
     "back_button_layout": "pack",
     "back_button_padding": (20, 10)
 }
+
+ALERT_CONFIG = {
+    "style": "Alert.TLabel",
+    "layout": "pack",
+    "padding": (10, 5),
+    "wraplength": 400,
+    "justify": "left"
+}
+
