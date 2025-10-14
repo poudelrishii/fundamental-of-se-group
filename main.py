@@ -25,7 +25,7 @@ class MainPage:
     def _initialize_window(self):
         self.root.title(APP_CONFIG["title"])
         self.root.configure(bg=APP_CONFIG["background_color"])
-        self.root.resizable(False, False)  # ✅ Window is now fixed size
+        self.root.resizable(False, False) 
 
     def navigate(self, page_name: str):
         self._clear_current_page()
