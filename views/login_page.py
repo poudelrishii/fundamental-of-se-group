@@ -1,7 +1,7 @@
 import tkinter as tk
-import tkinter.messagebox as mb
 from components.form_field_component import FormField
 from components.button_component import ButtonComponent
+from components.message_box_component import MessageBoxComponent
 from view_models.login_view_model import LoginViewModel
 from resources.parameters.app_parameters import LOGIN_CONFIG
 from views.base_page import BasePage
@@ -58,11 +58,10 @@ class LoginPage(BasePage):
     def _create_buttons(self):
         self.cancel_button = ButtonComponent(
             self.form_container,
-            name= LOGIN_CONFIG["cancel_text"],
+            name=LOGIN_CONFIG["cancel_text"],
             action=self.master.quit,
             style=LOGIN_CONFIG["register_button_style"],
-            layout=LOGIN_CONFIG["button_layout"]
-,
+            layout=LOGIN_CONFIG["button_layout"],
             padding=(5, 5)
         )
         self.login_button = ButtonComponent(
@@ -70,8 +69,7 @@ class LoginPage(BasePage):
             name=LOGIN_CONFIG["button_text"],
             action=self._handle_login,
             style=LOGIN_CONFIG["button_style"],
-            layout=LOGIN_CONFIG["button_layout"]
-,
+            layout=LOGIN_CONFIG["button_layout"],
             padding=(5, 5)
         )
 
@@ -104,7 +102,7 @@ class LoginPage(BasePage):
         is_valid, message = self.view_model.validate_credentials()
 
         if not is_valid:
-            mb.showerror(title="Login Error", message=message)
+            self._show_message("Login Error", message)
             self._clear_fields()
             return
 
@@ -115,11 +113,22 @@ class LoginPage(BasePage):
                 if self.controller and hasattr(self.controller, "navigate"):
                     self.controller.navigate("home")
             else:
-                mb.showerror(title="Login Error", message=login_message)
+                self._show_message("Login Error", login_message)
                 self._clear_fields()
         except Exception as e:
-            mb.showerror(title="Login Error", message=f"An error occurred: {e}")
+            self._show_message("Login Error", f"An error occurred: {e}")
             self._clear_fields()
+
+    def _show_message(self, title, message):
+        popup = MessageBoxComponent(
+            self.master,
+            title=title,
+            message=message,
+            width=400,
+            height=200,
+            modal=True
+        )
+        popup.show()
 
     def _clear_fields(self):
         self.username_field.input_widget.delete(0, tk.END)
