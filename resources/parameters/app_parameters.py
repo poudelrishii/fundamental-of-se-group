@@ -183,3 +183,14 @@ ALERT_CONFIG = {
     "justify": "left"
 }
 
+MESSAGEBOX_CONFIG = {
+    "style": "MessageBox.TFrame",
+    "layout": "pack",
+    "padding": (10, 10),
+    "wraplength": 400,
+    "justify": "left",
+    "default_title": "Notice",
+    "title_style": "MessageBoxTitle.TLabel",
+    "message_style": "MessageBoxText.TLabel"
+}
+
