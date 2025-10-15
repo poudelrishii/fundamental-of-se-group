@@ -18,7 +18,6 @@ class Database:
             logging.error("Error initializing database: %s", ex)
 
     # --- CRUD OPERATIONS ---
-
     def read_from_file(self):
         """Read all students from students.data"""
         try:

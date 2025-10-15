@@ -7,10 +7,14 @@ from resources.parameters.app_parameters import LOGIN_CONFIG
 from views.base_page import BasePage
 
 class LoginPage(BasePage):
-    def __init__(self, master, controller=None):
+    def __init__(self, master, controller=None, db=None):
         super().__init__(master, bg=LOGIN_CONFIG["background_color"])
         self.controller = controller
-        self.view_model = LoginViewModel()
+        self.view_model = LoginViewModel(db)
+
+        # StringVars so we can clear safely (no delete(0, END))
+        self.username_var = tk.StringVar()
+        self.password_var = tk.StringVar()
 
         self._create_title()
         self._create_label_frame()
@@ -42,11 +46,27 @@ class LoginPage(BasePage):
         self.form_container.columnconfigure(1, weight=3)
 
     def _create_form_fields(self):
-        self.username_field = FormField(self.form_container, **self._field_config("username"))
-        self.password_field = FormField(self.form_container, **self._field_config("password"))
+        # pass textvariable so FormField binds to our vars
+        self.username_field = FormField(
+            self.form_container,
+            textvariable=self.username_var,
+            **self._field_config("username")
+        )
+        self.password_field = FormField(
+            self.form_container,
+            textvariable=self.password_var,
+            **self._field_config("password")
+        )
 
         self.username_field.create_component()
         self.password_field.create_component()
+
+        # If FormField exposes the underlying Entry, set password masking defensively
+        try:
+            # many FormField components forward kwargs to tk.Entry, so this may already be set
+            self.password_field.input_widget.configure(show="*")
+        except Exception:
+            pass
 
         self.username_field.label_widget.grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self.username_field.input_widget.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -80,7 +100,7 @@ class LoginPage(BasePage):
         self.login_button.button_widget.grid(row=3, column=1, sticky="e", padx=5, pady=5)
 
     def _field_config(self, field_type):
-        return {
+        cfg = {
             "label_text": LOGIN_CONFIG[f"{field_type}_label"],
             "label_style": LOGIN_CONFIG["field_label_style"],
             "label_font": LOGIN_CONFIG["field_label_font"],
@@ -91,10 +111,15 @@ class LoginPage(BasePage):
             "input_fg": LOGIN_CONFIG["input_fg"],
             "input_bg": LOGIN_CONFIG["input_bg"],
             "padding": LOGIN_CONFIG["input_padding"],
-            "autoselect": field_type == "username"
+            "autoselect": field_type == "username",
         }
+        # many FormField implementations forward 'show' to tk.Entry
+        if field_type == "password":
+            cfg["show"] = "*"  # if FormField supports it
+        return cfg
 
     def _handle_login(self):
+        # Pull values from StringVars via FormField API
         username = self.username_field.get_value()
         password = self.password_field.get_value()
 
@@ -131,5 +156,18 @@ class LoginPage(BasePage):
         popup.show()
 
     def _clear_fields(self):
-        self.username_field.input_widget.delete(0, tk.END)
-        self.password_field.input_widget.delete(0, tk.END)
+        # Clear safely using StringVars; fall back if needed
+        try:
+            self.username_var.set("")
+            self.password_var.set("")
+        except Exception:
+            try:
+                self.username_field.input_widget.delete(0, tk.END)
+                self.password_field.input_widget.delete(0, tk.END)
+            except Exception:
+                pass
+        finally:
+            try:
+                self.username_field.input_widget.focus_set()
+            except Exception:
+                pass

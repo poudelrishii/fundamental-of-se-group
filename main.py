@@ -4,12 +4,16 @@ from views.register_page import RegisterPage
 from views.splash_page import SplashScreenPage
 from theme.style_config import setup_styles
 from resources.parameters.app_parameters import APP_CONFIG
+from db.database import Database
 
 class MainPage:
     def __init__(self):
         self.root = Tk()
         self._initialize_window()
         setup_styles()
+        
+        # Initialize the database
+        self.db = Database()
 
         # Available pages
         self.pages = {
@@ -19,8 +23,9 @@ class MainPage:
             # Add more pages here, e.g. "home": HomePage
         }
 
-        self.current_page = None
+        self.current_page = LoginPage(self.root, controller=self, db=self.db)
         self.navigate("splash")
+
 
     def _initialize_window(self):
         self.root.title(APP_CONFIG["title"])
@@ -37,7 +42,7 @@ class MainPage:
         if page_name == "splash":
             self.current_page = page_class(self.root, lambda: self.navigate("login"))
         else:
-            self.current_page = page_class(self.root, controller=self)
+            self.current_page = page_class(self.root, controller=self, db=self.db)
 
         self.current_page.pack(fill="both", expand=True)
 
