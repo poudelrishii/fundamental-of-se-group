@@ -2,6 +2,7 @@ from tkinter import Tk
 from views.login_page import LoginPage
 from views.register_page import RegisterPage
 from views.splash_page import SplashScreenPage
+from views.enrolment_page import EnrolmentPage
 from theme.style_config import setup_styles
 from resources.parameters.app_parameters import APP_CONFIG
 from db.database import Database
@@ -19,9 +20,11 @@ class MainPage:
         self.pages = {
             "splash": SplashScreenPage,
             "login": LoginPage,
-            "register": RegisterPage
-            # Add more pages here, e.g. "home": HomePage
+            "register": RegisterPage,
+            "enrolment": EnrolmentPage,   # student landing
+            #"admin": AdminPage,           # admin landing
         }
+
 
         self.current_page = LoginPage(self.root, controller=self, db=self.db)
         self.navigate("splash")
@@ -52,11 +55,10 @@ class MainPage:
         self.root.update_idletasks()
         width = self.root.winfo_reqwidth()
         height = self.root.winfo_reqheight()
-
         min_width = max(width, 700)
         min_height = max(height, 400)
-
         self.root.geometry(f"{min_width}x{min_height}+100+100")
+
 
     def _clear_current_page(self):
         if self.current_page:

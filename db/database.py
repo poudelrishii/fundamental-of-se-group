@@ -1,46 +1,42 @@
+# db/database.py
 import os
 import pickle
-import logging
 
 class Database:
     def __init__(self):
-        # Use students.data as required by the assignment
-        self.path = "db/students.data"
-        self.initialize()
+        # assignment requires students.data in a db/ folder
+        os.makedirs("db", exist_ok=True)
+        self.path = os.path.join("db", "students.data")
+        self._ensure_file()
 
-    def initialize(self):
-        """Check if the students.data file exists; if not, create it."""
-        try:
-            if not os.path.exists(self.path):
-                with open(self.path, 'wb') as f:
-                    pickle.dump([], f)  # start with empty student list
-        except Exception as ex:
-            logging.error("Error initializing database: %s", ex)
+    def _ensure_file(self):
+        if not os.path.exists(self.path):
+            print(f"[DEBUG][DB] Creating new data file at {self.path}")
+            with open(self.path, "wb") as f:
+                pickle.dump([], f)
 
-    # --- CRUD OPERATIONS ---
     def read_from_file(self):
-        """Read all students from students.data"""
         try:
-            with open(self.path, 'rb') as f:
-                return pickle.load(f)
-        except (FileNotFoundError, EOFError):
-            return []  # return empty list if file not found or empty
-        except Exception as ex:
-            logging.error("Error reading file: %s", ex)
+            with open(self.path, "rb") as f:
+                data = pickle.load(f)
+                print(f"[DEBUG][DB] Read {len(data)} records from {self.path}")
+                return data
+        except Exception as e:
+            print(f"[ERROR][DB] Failed reading {self.path}: {e}")
             return []
 
-    def write_to_file(self, students):
-        """Write all students to students.data"""
+    # backward-compat alias (some older code called this)
+    def read_data(self):
+        return self.read_from_file()
+
+    def write_to_file(self, data_list):
         try:
-            with open(self.path, 'wb') as f:
-                pickle.dump(students, f)
-        except Exception as ex:
-            logging.error("Error writing to file: %s", ex)
+            with open(self.path, "wb") as f:
+                pickle.dump(list(data_list or []), f)
+            print(f"[DEBUG][DB] Wrote {len(data_list or [])} records to {self.path}")
+        except Exception as e:
+            print(f"[ERROR][DB] Failed writing {self.path}: {e}")
 
     def clear_all(self):
-        """Clear all student data"""
-        try:
-            with open(self.path, 'wb') as f:
-                pickle.dump([], f)
-        except Exception as ex:
-            logging.error("Error clearing data: %s", ex)
+        self.write_to_file([])
+        print("[DEBUG][DB] Cleared all records")

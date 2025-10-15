@@ -1,3 +1,4 @@
+# views/login_page.py
 import tkinter as tk
 from components.form_field_component import FormField
 from components.button_component import ButtonComponent
@@ -12,7 +13,6 @@ class LoginPage(BasePage):
         self.controller = controller
         self.view_model = LoginViewModel(db)
 
-        # StringVars so we can clear safely (no delete(0, END))
         self.username_var = tk.StringVar()
         self.password_var = tk.StringVar()
 
@@ -23,50 +23,29 @@ class LoginPage(BasePage):
 
     def _create_title(self):
         self.title_label = tk.Label(
-            self,
-            text=LOGIN_CONFIG["title_text"],
-            font=LOGIN_CONFIG["title_font"],
-            fg=LOGIN_CONFIG["title_fg"],
-            bg=LOGIN_CONFIG["background_color"]
+            self, text=LOGIN_CONFIG["title_text"], font=LOGIN_CONFIG["title_font"],
+            fg=LOGIN_CONFIG["title_fg"], bg=LOGIN_CONFIG["background_color"]
         )
         self.title_label.pack(pady=LOGIN_CONFIG["title_padding"])
 
     def _create_label_frame(self):
         self.form_container = tk.LabelFrame(
-            self,
-            text=LOGIN_CONFIG["subtitle_text"],
-            bg=LOGIN_CONFIG["background_color"],
-            fg=LOGIN_CONFIG["subtitle_fg"],
-            font=LOGIN_CONFIG["subtitle_font"],
-            padx=20,
-            pady=20
+            self, text=LOGIN_CONFIG["subtitle_text"], bg=LOGIN_CONFIG["background_color"],
+            fg=LOGIN_CONFIG["subtitle_fg"], font=LOGIN_CONFIG["subtitle_font"], padx=20, pady=20
         )
         self.form_container.pack(pady=10)
         self.form_container.columnconfigure(0, weight=1)
         self.form_container.columnconfigure(1, weight=3)
 
     def _create_form_fields(self):
-        # pass textvariable so FormField binds to our vars
-        self.username_field = FormField(
-            self.form_container,
-            textvariable=self.username_var,
-            **self._field_config("username")
-        )
-        self.password_field = FormField(
-            self.form_container,
-            textvariable=self.password_var,
-            **self._field_config("password")
-        )
+        # label should read Email per brief
+        email_cfg = self._field_config("username"); email_cfg["label_text"] = "Email"
+        self.username_field = FormField(self.form_container, textvariable=self.username_var, **email_cfg)
+        pwd_cfg = self._field_config("password"); pwd_cfg["show"] = "*"
+        self.password_field = FormField(self.form_container, textvariable=self.password_var, **pwd_cfg)
 
         self.username_field.create_component()
         self.password_field.create_component()
-
-        # If FormField exposes the underlying Entry, set password masking defensively
-        try:
-            # many FormField components forward kwargs to tk.Entry, so this may already be set
-            self.password_field.input_widget.configure(show="*")
-        except Exception:
-            pass
 
         self.username_field.label_widget.grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self.username_field.input_widget.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
@@ -77,30 +56,20 @@ class LoginPage(BasePage):
 
     def _create_buttons(self):
         self.cancel_button = ButtonComponent(
-            self.form_container,
-            name=LOGIN_CONFIG["cancel_text"],
-            action=self.master.quit,
-            style=LOGIN_CONFIG["register_button_style"],
-            layout=LOGIN_CONFIG["button_layout"],
-            padding=(5, 5)
+            self.form_container, name=LOGIN_CONFIG["cancel_text"], action=self.master.quit,
+            style=LOGIN_CONFIG["register_button_style"], layout=LOGIN_CONFIG["button_layout"], padding=(5,5)
         )
         self.login_button = ButtonComponent(
-            self.form_container,
-            name=LOGIN_CONFIG["button_text"],
-            action=self._handle_login,
-            style=LOGIN_CONFIG["button_style"],
-            layout=LOGIN_CONFIG["button_layout"],
-            padding=(5, 5)
+            self.form_container, name=LOGIN_CONFIG["button_text"], action=self._handle_login,
+            style=LOGIN_CONFIG["button_style"], layout=LOGIN_CONFIG["button_layout"], padding=(5,5)
         )
-
         self.cancel_button.create_component()
         self.login_button.create_component()
-
         self.cancel_button.button_widget.grid(row=3, column=1, sticky="w", padx=5, pady=5)
         self.login_button.button_widget.grid(row=3, column=1, sticky="e", padx=5, pady=5)
 
     def _field_config(self, field_type):
-        cfg = {
+        return {
             "label_text": LOGIN_CONFIG[f"{field_type}_label"],
             "label_style": LOGIN_CONFIG["field_label_style"],
             "label_font": LOGIN_CONFIG["field_label_font"],
@@ -111,63 +80,48 @@ class LoginPage(BasePage):
             "input_fg": LOGIN_CONFIG["input_fg"],
             "input_bg": LOGIN_CONFIG["input_bg"],
             "padding": LOGIN_CONFIG["input_padding"],
-            "autoselect": field_type == "username",
+            "autoselect": field_type == "username"
         }
-        # many FormField implementations forward 'show' to tk.Entry
-        if field_type == "password":
-            cfg["show"] = "*"  # if FormField supports it
-        return cfg
 
     def _handle_login(self):
-        # Pull values from StringVars via FormField API
         username = self.username_field.get_value()
         password = self.password_field.get_value()
+        print(f"[DEBUG][LoginPage] Login attempt username={username}")
 
         self.view_model.set_credentials(username, password)
-        is_valid, message = self.view_model.validate_credentials()
-
-        if not is_valid:
-            self._show_message("Login Error", message)
+        ok, msg = self.view_model.validate_credentials()
+        print(f"[DEBUG][LoginPage] Validation: {msg}")
+        if not ok:
+            self._show_message("Login Error", msg)
             self._clear_fields()
             return
 
         try:
-            success, login_message = self.view_model.login()
+            success, result = self.view_model.login()
+            print(f"[DEBUG][LoginPage] Login result: {success}, {result}")
+
             if success:
+                role = (result.get("role") or "student").lower()
+                target_page = "admin" if role == "admin" else "enrolment"
+                print(f"[DEBUG][LoginPage] Routing by role={role} -> {target_page}")
                 self._clear_fields()
                 if self.controller and hasattr(self.controller, "navigate"):
-                    self.controller.navigate("home")
+                    self.controller.navigate(target_page)   # ← no role kwarg anymore
             else:
-                self._show_message("Login Error", login_message)
+                self._show_message("Login Error", result.get("message"))
                 self._clear_fields()
+
         except Exception as e:
+            print(f"[ERROR][LoginPage] Exception: {e}")
             self._show_message("Login Error", f"An error occurred: {e}")
             self._clear_fields()
 
     def _show_message(self, title, message):
-        popup = MessageBoxComponent(
-            self.master,
-            title=title,
-            message=message,
-            width=400,
-            height=200,
-            modal=True
-        )
+        popup = MessageBoxComponent(self.master, title=title, message=message, width=400, height=200, modal=True)
         popup.show()
 
     def _clear_fields(self):
-        # Clear safely using StringVars; fall back if needed
-        try:
-            self.username_var.set("")
-            self.password_var.set("")
-        except Exception:
-            try:
-                self.username_field.input_widget.delete(0, tk.END)
-                self.password_field.input_widget.delete(0, tk.END)
-            except Exception:
-                pass
-        finally:
-            try:
-                self.username_field.input_widget.focus_set()
-            except Exception:
-                pass
+        self.username_var.set("")
+        self.password_var.set("")
+        try: self.username_field.input_widget.focus_set()
+        except Exception: pass

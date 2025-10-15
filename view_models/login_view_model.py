@@ -1,44 +1,38 @@
-from db.database import Database
+# view_models/login_view_model.py
+import re
+from models.user_model import EMAIL_RE, PWD_RE
+from controllers.student_controller import StudentController
+from controllers.admin_controller import AdminController
 
 class LoginViewModel:
     def __init__(self, db):
-        """
-        ViewModel responsible for validating and authenticating login attempts.
-        It interacts directly with the Database to check user credentials.
-        """
         self.username = ""
         self.password = ""
-        self.db = db
+        # compose controllers (no UI here)
+        self.student_controller = StudentController(db)
+        self.admin_controller = AdminController(db)
 
-    def set_credentials(self, username: str, password: str):
-        self.username = username.strip()
-        self.password = password.strip()
+    def set_credentials(self, username, password):
+        self.username = (username or "").strip()
+        self.password = (password or "").strip()
 
     def validate_credentials(self):
         if not self.username or not self.password:
-            return False, "Username and password cannot be empty."
-        return True, "Valid credentials."
+            return False, "Email and password cannot be empty."
+        if not re.match(EMAIL_RE, self.username):
+            return False, "Email must end with @university.com."
+        if not re.match(PWD_RE, self.password):
+            return False, "Password must start with an uppercase, have ≥5 letters, then ≥3 digits."
+        return True, "OK"
 
     def login(self):
-        if self.db is None:
-            return False, "Database not initialised (db is None)."
+        # try admin first (predefined), then students
+        ok, role = self.admin_controller.login(self.username, self.password)
+        if ok:
+            return True, {"message": "Welcome Admin!", "role": role}
 
-        users = self.db.read_from_file() or []
-        for s in users:
-            if s.get("email") == self.username and s.get("password") == self.password:
-                return True, f"Welcome {s.get('name','')}!"
-        return False, "Invalid email or password."
+        ok, role = self.student_controller.login(self.username, self.password)
+        if ok:
+            return True, {"message": "Welcome!", "role": role}
 
-        return False, "Incorrect username or password."
-
-    def load_users(self, user_dict):
-        """
-        Injects user data from any source.
-        Expected format: { "username1": "password1", "username2": "password2", ... }
-        """
-        if isinstance(user_dict, dict):
-            self._user_store = {
-                str(k).strip(): str(v).strip()
-                for k, v in user_dict.items()
-                if k and v
-            }
+        return False, {"message": "Invalid email or password.", "role": None}
