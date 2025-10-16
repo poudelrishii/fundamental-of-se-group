@@ -6,6 +6,7 @@ from views.enrolment_page import EnrolmentPage
 from theme.style_config import setup_styles
 from resources.parameters.app_parameters import APP_CONFIG
 from db.database import Database
+from views.subject_page import SubjectPage
 
 class MainPage:
     def __init__(self):
@@ -21,7 +22,8 @@ class MainPage:
             "splash": SplashScreenPage,
             "login": LoginPage,
             "register": RegisterPage,
-            "enrolment": EnrolmentPage,   # student landing
+            "enrolment": EnrolmentPage,
+            "subjects": SubjectPage, # student landing
             #"admin": AdminPage,           # admin landing
         }
 
